@@ -1,0 +1,102 @@
+==============================
+🔢 CORE MEASURES
+==============================
+
+Total Incidents =
+COUNTROWS('cybersecurity_attacks')
+-- Counts total number of incidents (rows)
+
+Distinct Source IPs =
+DISTINCTCOUNT('cybersecurity_attacks'[Source IP Address])
+-- Unique source IPs involved
+
+Distinct Devices =
+DISTINCTCOUNT('cybersecurity_attacks'[Device Information])
+-- Unique devices affected
+
+Avg Anomaly Score =
+AVERAGE('cybersecurity_attacks'[Anomaly Scores])
+-- Mean anomaly score across incidents
+
+Avg Packet Length =
+AVERAGE('cybersecurity_attacks'[Packet Length])
+-- Mean packet size
+
+Incidents per Device =
+DIVIDE([Total Incidents], [Distinct Devices], 0)
+-- Ratio of incidents per device
+
+Attack Type Count =
+COUNTROWS('cybersecurity_attacks')
+-- Helper for visuals (e.g., Top N by Attack Type)
+
+==============================
+📅 TIME INTELLIGENCE
+==============================
+
+Incidents YTD =
+TOTALYTD([Total Incidents], 'Date'[Date])
+-- Year-to-date incident count
+
+Incidents LY =
+CALCULATE([Total Incidents], SAMEPERIODLASTYEAR('Date'[Date]))
+-- YTD count from same period last year
+
+Incidents YoY % =
+VAR Curr = [Incidents YTD]
+VAR Prev = [Incidents LY]
+RETURN IF(Prev = 0, BLANK(), DIVIDE(Curr - Prev, Prev))
+-- Year-over-year % change
+
+Incidents This Month =
+CALCULATE(
+  [Total Incidents],
+  FILTER(
+    ALL('Date'),
+    'Date'[Year] = YEAR(TODAY()) &&
+    'Date'[MonthNumber] = MONTH(TODAY())
+  )
+)
+-- Incidents in current month
+
+Incidents Prev Month =
+CALCULATE([Total Incidents], DATEADD('Date'[Date], -1, MONTH))
+-- Incidents in previous month
+
+Avg Anomaly Prev Period =
+CALCULATE([Avg Anomaly Score], DATEADD('Date'[Date], -1, MONTH))
+-- Previous period anomaly score
+
+Pct Critical Prev Period =
+VAR CritPrev = CALCULATE([Pct Critical], DATEADD('Date'[Date], -1, MONTH))
+RETURN CritPrev
+-- Previous period % critical
+
+==============================
+⚠️ SEVERITY / MALWARE / ALERTS
+==============================
+
+Pct Critical =
+VAR Crit = CALCULATE([Total Incidents], 'cybersecurity_attacks'[Severity_Calc] = "Critical")
+RETURN DIVIDE(Crit, [Total Incidents], 0)
+-- % of incidents marked Critical
+
+Pct Malware =
+DIVIDE(
+  COUNTROWS( FILTER('cybersecurity_attacks', NOT( ISBLANK('cybersecurity_attacks'[Malware Indicators]) ) ) ),
+  [Total Incidents],
+  0
+)
+-- % of incidents with malware indicators
+
+Alerts Count =
+COUNTROWS( FILTER('cybersecurity_attacks', NOT( ISBLANK('cybersecurity_attacks'[Alerts/Warnings]) ) ) )
+-- Count of incidents with alerts/warnings
+
+==============================
+🆔 CALCULATED COLUMN
+==============================
+
+Incident ID =
+FORMAT('cybersecurity_attacks'[Timestamp], "yyyyMMddHHmmss") & "-" & LEFT('cybersecurity_attacks'[Source IP Address],15)
+-- Unique ID per incident (timestamp + truncated IP)

@@ -1,0 +1,86 @@
+DAX Measures — EV Dashboard Project
+===================================
+
+Table Name: EVs
+
+1. Total Models
+Total Models = DISTINCTCOUNT( EVs[model] )
+
+2. Total Brands
+Total Brands = DISTINCTCOUNT( EVs[brand] )
+
+3. Model Count (for visuals)
+Model Count = DISTINCTCOUNT( EVs[model] )
+
+4. Avg Range (km)
+Avg Range (km) = AVERAGE( EVs[range_km] )
+
+5. Median Range (km)
+Median Range (km) = MEDIAN( EVs[range_km] )
+
+6. Avg Battery (kWh)
+Avg Battery (kWh) = AVERAGE( EVs[battery_capacity_kWh] )
+
+7. Avg Efficiency (Wh/km)
+Avg Efficiency (Wh/km) = AVERAGE( EVs[efficiency_wh_per_km] )
+
+8. Avg Fast Charge Power (kW)
+Avg Fast Charge Power (kW) =
+AVERAGEX(
+  FILTER( EVs, NOT( ISBLANK( EVs[fast_charging_power_kw_dc] ) ) && EVs[fast_charging_power_kw_dc] > 0 ),
+  EVs[fast_charging_power_kw_dc]
+)
+
+9. Models with Fast Charge
+Models with Fast Charge =
+CALCULATE(
+  DISTINCTCOUNT( EVs[model] ),
+  FILTER( EVs, NOT( ISBLANK( EVs[fast_charging_power_kw_dc] ) ) && EVs[fast_charging_power_kw_dc] > 0 )
+)
+
+10. % With Fast Charge
+% With Fast Charge = DIVIDE( [Models with Fast Charge], [Total Models], 0 )
+
+11. Avg Acceleration 0-100s
+Avg Accel 0-100s = AVERAGE( EVs[acceleration_0_100_s] )
+
+12. Avg Top Speed (km/h)
+Avg Top Speed (km/h) = AVERAGE( EVs[top_speed_kmh] )
+
+13. Avg Cargo Volume (L)
+Avg Cargo Volume (L) = AVERAGE( EVs[cargo_volume_l] )
+
+14. Range per kWh
+Range per kWh =
+AVERAGEX(
+  FILTER( EVs,
+    NOT( ISBLANK( EVs[range_km] ) ) &&
+    NOT( ISBLANK( EVs[battery_capacity_kWh] ) ) &&
+    EVs[battery_capacity_kWh] > 0
+  ),
+  DIVIDE( EVs[range_km], EVs[battery_capacity_kWh], 0 )
+)
+
+15. Models with Towing Capacity
+Models with Towing Cap =
+CALCULATE(
+  DISTINCTCOUNT( EVs[model] ),
+  FILTER( EVs, NOT( ISBLANK( EVs[towing_capacity_kg] ) ) && EVs[towing_capacity_kg] > 0 )
+)
+
+16. % With Towing Capacity
+% With Towing Cap = DIVIDE( [Models with Towing Cap], [Total Models], 0 )
+
+17. Top Model by Range
+Top Model by Range =
+VAR TopRow = TOPN(1, EVs, EVs[range_km], DESC)
+RETURN
+CONCATENATEX( TopRow,
+   EVs[brand] & " " & EVs[model] & " (" & FORMAT(EVs[range_km], "#,0") & " km)",
+   ", "
+)
+
+Notes:
+- All measures are created under the "Modeling" tab in Power BI.
+- Format % measures as Percentage with 1 decimal.
+- Use AVERAGEX for row-level calculations.
